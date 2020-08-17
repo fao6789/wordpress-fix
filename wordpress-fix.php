@@ -330,3 +330,149 @@ add_filter( 'get_the_archive_title', function ($title) {
   }
   return $title;
 });
+
+
+///////////////////// Custome Post Type
+
+/// ->>>>ra đây cho nó tiện https://generatewp.com/post-type/ sẽ kết hợp với afc là tuyệt nhất
+
+// thường thì mỗi post type sẽ có 1 tên vd sanpham lên khi tạo thêm 1 trường mới thì có 1 tên mới nếu không nó sẽ không hiện thị  register_post_type('sanpham', $args);
+
+// ví dụ cơ bản 
+
+function tao_custom_post_type()
+{
+ 
+    /*
+     * Biến $label để chứa các text liên quan đến tên hiển thị của Post Type trong Admin
+     */
+    $label = array(
+        'name' => 'Các sản phẩm', //Tên post type dạng số nhiều
+        'singular_name' => 'Sản phẩm' //Tên post type dạng số ít
+    );
+ 
+    /*
+     * Biến $args là những tham số quan trọng trong Post Type
+     */
+    $args = array(
+        'labels' => $label, //Gọi các label trong biến $label ở trên
+        'description' => 'Post type đăng sản phẩm', //Mô tả của post type
+        'supports' => array(
+            'title',
+            'editor',
+            'excerpt',
+            'author',
+            'thumbnail',
+            'comments',
+            'trackbacks',
+            'revisions',
+            'custom-fields'
+        ), //Các tính năng được hỗ trợ trong post type
+        'taxonomies' => array( 'category', 'post_tag' ), //Các taxonomy được phép sử dụng để phân loại nội dung
+        'hierarchical' => false, //Cho phép phân cấp, nếu là false thì post type này giống như Post, true thì giống như Page
+        'public' => true, //Kích hoạt post type
+        'show_ui' => true, //Hiển thị khung quản trị như Post/Page
+        'show_in_menu' => true, //Hiển thị trên Admin Menu (tay trái)
+        'show_in_nav_menus' => true, //Hiển thị trong Appearance -> Menus
+        'show_in_admin_bar' => true, //Hiển thị trên thanh Admin bar màu đen.
+        'menu_position' => 5, //Thứ tự vị trí hiển thị trong menu (tay trái)
+        'menu_icon' => '', //Đường dẫn tới icon sẽ hiển thị
+        'can_export' => true, //Có thể export nội dung bằng Tools -> Export
+        'has_archive' => true, //Cho phép lưu trữ (month, date, year)
+        'exclude_from_search' => false, //Loại bỏ khỏi kết quả tìm kiếm
+        'publicly_queryable' => true, //Hiển thị các tham số trong query, phải đặt true
+        'capability_type' => 'post' //
+    );
+ 
+    register_post_type('sanpham', $args); //Tạo post type với slug tên là sanpham và các tham số trong biến $args ở trên
+ 
+}
+/* Kích hoạt hàm tạo custom post type */
+add_action('init', 'tao_custom_post_type');
+
+///////////////// Tạo plugin cơ bản 
+/////// cấu trúc plugin
+/// *css
+//* image
+//* js
+//* lib
+//main.php
+//readme.txt
+//// đoạn này mở đầu file main
+/**
+ * Plugin Name: My First Plugin Demo // Tên của plugin
+ * Plugin URI: http://hocwp.net // Địa chỉ trang chủ của plugin
+ * Description: Đây là plugin đầu tiên mà tôi viết dành riêng cho WordPress, chỉ để học tập mà thôi. // Phần mô tả cho plugin
+ * Version: 1.0 // Đây là phiên bản đầu tiên của plugin
+ * Author: Sau Hi // Tên tác giả, người thực hiện plugin này
+ * Author URI: http://sauhi.com // Địa chỉ trang chủ của tác giả
+ * License: GPLv2 or later // Thông tin license của plugin, nếu không quan tâm thì bạn cứ để GPLv2 vào đây
+ */
+
+/// đoạn này là gọi file nội bộ plugin
+function enqueue_scripts_and_styles()
+{
+  
+        wp_register_style( 'hocwp-foundation', get_theme_uri() . '/lib/foundation.css', array(), get_theme_version() );
+        wp_register_style( 'hocwp', get_style_uri(), array(), get_theme_version() );
+        wp_register_script('my-plugin-script', plugins_url( '/js/script.js', __FILE__ ));
+        wp_enqueue_script('mainplugin', plugins_url('/js/main.js', __FILE__), array(), '20151215', true);
+ 
+}
+add_action( 'wp_enqueue_scripts', 'enqueue_scripts_and_styles' );
+
+///// 1 ví dụ tạo 1 trang nhập đơn giản
+
+
+function register_mysettings() {
+        register_setting( 'mfpd-settings-group', 'mfpd_option_name' );
+}
+ 
+function mfpd_create_menu() {
+        add_menu_page('My First Plugin Settings', 'MFPD Settings', 'administrator', __FILE__, 'mfpd_settings_page',plugins_url('/images/icon.png', __FILE__), 1);
+        add_action( 'admin_init', 'register_mysettings' );
+}
+add_action('admin_menu', 'mfpd_create_menu'); 
+ 
+function mfpd_settings_page() {
+?>
+<div class="wrap">
+<h2>Tạo trang cài đặt cho plugin</h2>
+<?php if( isset($_GET['settings-updated']) ) { ?>
+    <div id="message" class="updated">
+        <p><strong><?php _e('Settings saved.') ?></strong></p>
+    </div>
+<?php } ?>
+<form method="post" action="options.php">
+    <?php settings_fields( 'mfpd-settings-group' ); ?>
+    <table class="form-table">
+        <tr valign="top">
+        <th scope="row">Tùy chọn cài đặt</th>
+        <td><input type="text" name="mfpd_option_name" value="<?php echo get_option('mfpd_option_name'); ?>" /></td>
+        </tr>
+    </table>
+    <?php submit_button(); ?>
+</form>
+</div>
+<?php } 
+
+///////////// List code thường dùng 
+the_content(); // lấy bài viết ở single.php là chủ yếu nếu không hiển thị thì ta dùng vòng lặp while
+the_title(); // lấy title của bài viết rất hay dùng
+get_the_permalink(); // lấy link của bài viết 
+get_site_url(); // lấy đường dẫn của site 
+wp_trim_words(get_the_excerpt($post->ID),15, '...'); // compo mình rất hay dùng khi mô tả hoặc title quá dài 
+get_the_date(); // lấy time của bài viết nhớ chuyển định dạng ở quản trị để được kết quả tương ứng
+get_queried_object(); // cũng khá mạnh để lấy bài viết setup từ chỗ khác
+get_the_archive_description(); //lấy mô tả cả tag hoặc cate 
+get_the_tags(); // lấy thông tin tag từ bài viết thường nó là mảng
+wp_get_attachment_image_src(); /// lấy đường dẫn thôi chứ lấy ảnh là nó đưa cả thẻ img thường mình dùng cái này còn custoem được
+
+
+
+
+
+
+////////////////////////// continue
+
+
