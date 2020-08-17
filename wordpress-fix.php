@@ -207,6 +207,8 @@ $args = array(
 
 );
 
+//////// Vòng lặp 1 đoạn cho bài viết
+
 $the_query = new WP_Query( $args );
 
 // The Loop
@@ -219,4 +221,112 @@ endif;
 // Reset Post Data
 wp_reset_postdata();
 
-?>
+/////////////////  Ví dụ khác 
+
+$my_query = new WP_Query('tag_slug__in=....&offset=0&showposts=10');
+while ($my_query->have_posts()): $my_query->the_post();
+    global $post;
+    $do_not_duplicate[$post->ID] = $post->ID;
+    if (has_post_thumbnail()) {
+        $large_image_url = wp_get_attachment_image_src(get_post_thumbnail_id(), 'thumbnail');
+    }
+    $img = ($large_image_url[0] != '') ? $large_image_url[0] : ''; ?>
+    <div class="">
+        <div class="">
+            <img src="<?= $img ?>" width="100%" alt="<?= get_the_title($post->ID) ?> ">
+            <a href="<?= get_the_permalink($post->ID) ?>"
+               title="<?= get_the_title($post->ID) ?>"><?= get_the_title($post->ID) ?></a>
+        </div>
+    </div>
+
+<?php endwhile;
+wp_reset_query(); 
+
+////////// Gọi menu đơn giản
+                        wp_nav_menu(
+                            array(
+                                'theme_location' => 'main-menu',
+                                'menu_id'        => 'main-menu',
+                                'menu_class'=>'main-menu',
+                            )
+                        );
+                      
+
+////////////  Thêm class  thẻ li  của menu
+/// page nó vào func
+function add_classes_on_li($classes, $item, $args) {
+  $classes[] = 'title-class-li';
+  return $classes;
+}
+add_filter('nav_menu_css_class','add_classes_on_li',1,3);
+
+//////////////////////   Xóa Tag với Cate
+////////////////
+///////////////
+//// * Page vào function.php
+/// * vào cài đặt đường dẫn tĩnh 
+///* Save lại domain/tên bài viết
+/// done 
+// Remove Parent Category from Child Category URL
+add_filter('term_link', 'devvn_no_category_parents', 1000, 3);
+function devvn_no_category_parents($url, $term, $taxonomy) {
+    if($taxonomy == 'category'){
+        $term_nicename = $term->slug;
+        $url = trailingslashit(get_option( 'home' )) . user_trailingslashit( $term_nicename, 'category' );
+    }
+    return $url;
+}
+// Rewrite url mới
+function devvn_no_category_parents_rewrite_rules($flash = false) {
+    $terms = get_terms( array(
+        'taxonomy' => 'category',
+        'post_type' => 'post',
+        'hide_empty' => false,
+    ));
+    if($terms && !is_wp_error($terms)){
+        foreach ($terms as $term){
+            $term_slug = $term->slug;
+            add_rewrite_rule($term_slug.'/?$', 'index.php?category_name='.$term_slug,'top');
+            add_rewrite_rule($term_slug.'/page/([0-9]{1,})/?$', 'index.php?category_name='.$term_slug.'&paged=$matches[1]','top');
+            add_rewrite_rule($term_slug.'/(?:feed/)?(feed|rdf|rss|rss2|atom)/?$', 'index.php?category_name='.$term_slug.'&feed=$matches[1]','top');
+        }
+    }
+    if ($flash == true)
+        flush_rewrite_rules(false);
+}
+add_action('init', 'devvn_no_category_parents_rewrite_rules');
+ 
+/*Sửa lỗi khi tạo mới category bị 404*/
+function devvn_new_category_edit_success() {
+    devvn_no_category_parents_rewrite_rules(true);
+}
+add_action('created_category','devvn_new_category_edit_success');
+add_action('edited_category','devvn_new_category_edit_success');
+add_action('delete_category','devvn_new_category_edit_success');
+
+
+//////////////////// Redirect 404 về trang chủ
+/// vào file 404.php
+/// page nó vào header 
+/// done
+
+header("HTTP/1.1 301 Moved Permanently");
+header("Location: ".get_bloginfo('url'));
+exit();
+
+
+
+////////////////// Remove title chuyên mục  và tag
+
+add_filter( 'get_the_archive_title', function ($title) {
+  if ( is_category() ) {
+      $title = single_cat_title( '', false );
+  }
+  return $title;
+});
+add_filter( 'get_the_archive_title', function ($title) {
+  if ( is_tag() ) {
+      $title = single_cat_title( '', false );
+  }
+  return $title;
+});
