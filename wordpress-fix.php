@@ -469,6 +469,16 @@ get_the_tags(); // lấy thông tin tag từ bài viết thường nó là mản
 wp_get_attachment_image_src(); /// lấy đường dẫn thôi chứ lấy ảnh là nó đưa cả thẻ img thường mình dùng cái này còn custoem được
 
 
+//////////// cập nhật thời gian mới nhất bài viết 
+ $u_time = get_the_time('U'); 
+$u_modified_time = get_the_modified_time('U'); 
+if ($u_modified_time >= $u_time + 86400) { 
+echo "Cập nhật ngày "; 
+the_modified_time('d/m/Y'); 
+echo " lúc "; 
+the_modified_time(); 
+echo ""; } s
+
 
 
 
